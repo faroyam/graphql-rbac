@@ -63,7 +63,7 @@ func (c *connection) ExecuteInTransaction(ctx context.Context, f TransactionFunc
 		ReadOnly:  false,
 	})
 	if errBegin != nil {
-		return fmt.Errorf("beginnig transaction error: %w", errBegin)
+		return fmt.Errorf("beginning transaction error: %w", errBegin)
 	}
 
 	errTx := f(tx)
