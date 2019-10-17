@@ -1,0 +1,26 @@
+type Role {
+    id: ID!
+    title: String!
+    description: String!
+    createdAt: Time!
+    updatedAt: Time!
+
+    actions: [GraphqlAction!] @auth(action: GET_ROLE_ACTION)
+}
+
+input RolesInput {
+    search: String
+    limit: Int!
+    offset: Int!
+}
+
+input CreateRoleInput {
+    title: String!
+    description: String!
+}
+
+input UpdateRoleInput {
+    id: ID!
+    title: String @auth(action: UPDATE_ROLE_TITLE)
+    description: String @auth(action: GET_ROLE_DESCRIPTION)
+}

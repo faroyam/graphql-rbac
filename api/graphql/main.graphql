@@ -1,0 +1,35 @@
+schema {
+    query: Query
+    mutation: Mutation
+}
+
+type Query {
+    account: User @login
+
+    user(id: ID!): User @auth(action: GET_USER)
+    users(input: UsersInput!): [User!] @auth(action: GET_USER)
+
+    actions(input: ActionsInput!): [GraphqlAction!] @auth(action: GET_ACTION)
+
+    role(id: ID!): Role @auth(action: GET_ROLE)
+    roles(input: RolesInput!): [Role!] @auth(action: GET_ROLE)
+}
+
+type Mutation {
+    signUp(input: SignUpInput!): User
+    signIn(input: SignInInput!): Tokens
+    signOut: ID! @login
+
+    updateAccount(input: UpdateAccountInput!): User @login
+    updateAccountPassword(input: UpdateAccountPasswordInput!): ID @login
+    deleteAccount: ID @login
+
+    bindUserToRole(userID: ID!, roleID: ID!, binding: Binding!): ID @auth(action: UPDATE_USER_ROLE)
+
+    createRole(input: CreateRoleInput!): Role @auth(action: CREATE_ROLE)
+    updateRole(input: UpdateRoleInput!): Role @auth(action: UPDATE_ROLE)
+    deleteRole(id: ID!): ID @auth(action: DELETE_ROLE)
+
+    updateAction(input: UpdateActionInput!): GraphqlAction @auth(action: UPDATE_ACTION)
+    bindActionToRole(action: String!, roleID: ID!, binding: Binding!): ID @auth(action: UPDATE_ROLE_METHOD)
+}

@@ -1,0 +1,5 @@
+.idea
+api/test_requests
+**/*bindata.go
+.graphqlconfig
+app

@@ -1,0 +1,51 @@
+type Tokens {
+    accessToken: String!
+    refreshToken: String!
+}
+
+type User {
+    id: ID!
+    login: String!
+    firstName: String!
+    lastName: String!
+    createdAt: Time!
+    updatedAt: Time!
+
+    roles: [Role!] @auth(action: GEY_USER_ROLE)
+}
+
+input UsersInput {
+    search: String,
+    limit: Int!,
+    offset: Int!
+}
+
+input SignUpInput {
+    login: String!
+    password: String!
+    firstName: String!
+    lastName: String!
+}
+
+input SignInInput {
+    login: String!
+    password: String!
+}
+
+input UpdateAccountInput {
+    login: String
+    firstName: String
+    lastName: String
+}
+
+input UpdateAccountPasswordInput {
+    id: ID!
+    oldPassword: String!
+    newPassword: String!
+}
+
+input UpdateUserInput {
+    id: ID!
+    firstName: String
+    lastName: String
+}

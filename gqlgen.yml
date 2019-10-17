@@ -1,0 +1,21 @@
+schema:
+  - api/graphql/*.graphql
+exec:
+  filename: internal/graphql/server/server.gen.go
+  package: server
+model:
+  filename: internal/graphql/models/models.gen.go
+  package: models
+
+models:
+  ID:
+    model:
+      - graphql-rbac/internal/graphql/models.ID
+  User:
+    fields:
+      roles:
+        resolver: true
+  Role:
+    fields:
+      actions:
+        resolver: true

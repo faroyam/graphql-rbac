@@ -1,0 +1,19 @@
+directive @login on FIELD_DEFINITION
+directive @auth(action: Action!) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
+
+type GraphqlAction {
+    title: String!
+    description: String!
+    createdAt: Time!
+    updatedAt: Time!
+}
+
+input UpdateActionInput {
+    action: String!
+    description: String @auth(action: UPDATE_ACTION_TITLE)
+}
+
+input ActionsInput {
+    limit: Int!
+    offset: Int!
+}
