@@ -66,6 +66,17 @@ func (r *mutationResolver) SignUp(ctx context.Context, in models.SignUpInput) (*
 	return models.UserFromRepo(newUser)
 }
 
+func (r *mutationResolver) RefreshTokens(ctx context.Context, refreshToken string) (*models.Tokens, error) {
+	accessToken, refreshToken, err := r.controller.RefreshTokens(ctx, refreshToken)
+	if err != nil {
+		return nil, err
+	}
+	return &models.Tokens{
+		AccessToken:  accessToken,
+		RefreshToken: refreshToken,
+	}, nil
+}
+
 func (r *mutationResolver) SignOut(ctx context.Context) (*models.ID, error) {
 	userID := httpctx.GetUser(ctx)
 	err := r.controller.SignOut(ctx, userID)

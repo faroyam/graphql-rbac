@@ -63,6 +63,7 @@ type ComplexityRoot struct {
 		CreateRole            func(childComplexity int, input models.CreateRoleInput) int
 		DeleteAccount         func(childComplexity int) int
 		DeleteRole            func(childComplexity int, id models.ID) int
+		RefreshTokens         func(childComplexity int, refreshToken string) int
 		SignIn                func(childComplexity int, input models.SignInInput) int
 		SignOut               func(childComplexity int) int
 		SignUp                func(childComplexity int, input models.SignUpInput) int
@@ -109,6 +110,7 @@ type ComplexityRoot struct {
 type MutationResolver interface {
 	SignUp(ctx context.Context, input models.SignUpInput) (*models.User, error)
 	SignIn(ctx context.Context, input models.SignInInput) (*models.Tokens, error)
+	RefreshTokens(ctx context.Context, refreshToken string) (*models.Tokens, error)
 	SignOut(ctx context.Context) (*models.ID, error)
 	UpdateAccount(ctx context.Context, input models.UpdateAccountInput) (*models.User, error)
 	UpdateAccountPassword(ctx context.Context, input models.UpdateAccountPasswordInput) (*models.ID, error)
@@ -232,6 +234,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteRole(childComplexity, args["id"].(models.ID)), true
+
+	case "Mutation.refreshTokens":
+		if e.complexity.Mutation.RefreshTokens == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_refreshTokens_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.RefreshTokens(childComplexity, args["refreshToken"].(string)), true
 
 	case "Mutation.signIn":
 		if e.complexity.Mutation.SignIn == nil {
@@ -610,6 +624,7 @@ type Query {
 type Mutation {
     signUp(input: SignUpInput!): User
     signIn(input: SignInInput!): Tokens
+    refreshTokens(refreshToken: String!): Tokens
     signOut: ID! @login
 
     updateAccount(input: UpdateAccountInput!): User @login
@@ -812,6 +827,20 @@ func (ec *executionContext) field_Mutation_deleteRole_args(ctx context.Context, 
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_refreshTokens_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["refreshToken"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["refreshToken"] = arg0
 	return args, nil
 }
 
@@ -1235,6 +1264,47 @@ func (ec *executionContext) _Mutation_signIn(ctx context.Context, field graphql.
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().SignIn(rctx, args["input"].(models.SignInInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*models.Tokens)
+	rctx.Result = res
+	ctx = ec.Tracer.StartFieldChildExecution(ctx)
+	return ec.marshalOTokens2ᚖgraphqlᚑrbacᚋinternalᚋgraphqlᚋmodelsᚐTokens(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_refreshTokens(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	ctx = ec.Tracer.StartFieldExecution(ctx, field)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+		ec.Tracer.EndFieldExecution(ctx)
+	}()
+	rctx := &graphql.ResolverContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+	ctx = graphql.WithResolverContext(ctx, rctx)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_refreshTokens_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	rctx.Args = args
+	ctx = ec.Tracer.StartFieldResolverExecution(ctx, rctx)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().RefreshTokens(rctx, args["refreshToken"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -4512,6 +4582,8 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec._Mutation_signUp(ctx, field)
 		case "signIn":
 			out.Values[i] = ec._Mutation_signIn(ctx, field)
+		case "refreshTokens":
+			out.Values[i] = ec._Mutation_refreshTokens(ctx, field)
 		case "signOut":
 			out.Values[i] = ec._Mutation_signOut(ctx, field)
 			if out.Values[i] == graphql.Null {

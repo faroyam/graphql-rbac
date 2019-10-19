@@ -67,40 +67,38 @@ func (c *Controller) SignUp(ctx context.Context, login, firstName, lastName, pas
 	return newUser, nil
 }
 
+func (c *Controller) RefreshTokens(ctx context.Context, oldRefreshToken string) (string, string, error) {
+
+	_, err := c.validateToken(ctx, oldRefreshToken, RefreshToken)
+	if err != nil {
+		return "", "", err
+	}
+
+	accessToken, err := c.tokenGenerator.Generate()
+	if err != nil {
+		return "", "", err
+	}
+
+	refreshToken, err := c.tokenGenerator.Generate()
+	if err != nil {
+		return "", "", err
+	}
+
+	session, err := c.repo.Sessions().Update(ctx, oldRefreshToken, accessToken, refreshToken,
+		c.cfg.Session.AccessTokenTTL, c.cfg.Session.RefreshTokenTTL)
+	if err != nil {
+		return "", "", err
+	}
+
+	return session.AccessToken, session.RefreshToken, nil
+}
+
 func (c *Controller) SignOut(ctx context.Context, userID uuid.UUID) error {
 	return c.repo.Sessions().DeleteByUserID(ctx, userID)
 }
 
 func (c *Controller) ValidateToken(ctx context.Context, token string, tokenType TokenType) (uuid.UUID, error) {
-
-	session, err := c.repo.Sessions().GetByToken(ctx, token)
-	if err != nil {
-		if errors.Is(err, repository.ErrNotFound) {
-			return uuid.UUID{}, ErrInvalidToken
-		}
-		return uuid.UUID{}, err
-	}
-
-	tokenExpired := func(ttl int) bool {
-		if time.Now().Unix() > session.UpdatedAt.Unix()+int64(ttl) {
-			return false
-		}
-		return true
-	}
-
-	ok := false
-	switch tokenType {
-	case RefreshToken:
-		ok = tokenExpired(session.RefreshTokenTTL)
-	case AccessToken:
-		ok = tokenExpired(session.AccessTokenTTL)
-	}
-
-	if !ok {
-		return uuid.UUID{}, ErrTokenExpired
-	}
-
-	return session.UserID, nil
+	return c.validateToken(ctx, token, tokenType)
 }
 
 func (c *Controller) AllowedAllActions(ctx context.Context, userID uuid.UUID) (bool, error) {
@@ -179,4 +177,36 @@ func (c *Controller) BindUserToRole(ctx context.Context, userID uuid.UUID, roleI
 
 func (c *Controller) UserRoles(ctx context.Context, userID uuid.UUID) ([]*repository.Role, error) {
 	return c.repo.Users().Roles(ctx, userID)
+}
+
+func (c *Controller) validateToken(ctx context.Context, token string, tokenType TokenType) (uuid.UUID, error) {
+
+	session, err := c.repo.Sessions().GetByToken(ctx, token)
+	if err != nil {
+		if errors.Is(err, repository.ErrNotFound) {
+			return uuid.UUID{}, ErrInvalidToken
+		}
+		return uuid.UUID{}, err
+	}
+
+	tokenExpired := func(ttl int) bool {
+		if time.Now().Unix() > session.UpdatedAt.Unix()+int64(ttl) {
+			return false
+		}
+		return true
+	}
+
+	ok := false
+	switch tokenType {
+	case RefreshToken:
+		ok = tokenExpired(session.RefreshTokenTTL)
+	case AccessToken:
+		ok = tokenExpired(session.AccessTokenTTL)
+	}
+
+	if !ok {
+		return uuid.UUID{}, ErrTokenExpired
+	}
+
+	return session.UserID, nil
 }

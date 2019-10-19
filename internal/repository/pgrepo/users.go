@@ -41,8 +41,8 @@ func (r *usersRepo) Create(ctx context.Context, login, firstName, lastName, pass
 }
 
 func (r *usersRepo) Update(ctx context.Context, userID uuid.UUID, login, firstName, lastName, password *string) (*repository.User, error) {
-	changeSet := make(map[string]interface{}, 4)
-	changeQuery := make([]string, 0, 4)
+	changeSet := make(map[string]interface{}, 5)
+	changeQuery := make([]string, 0, 5)
 
 	if login != nil {
 		changeQuery = append(changeQuery, "login = :login")
@@ -65,7 +65,7 @@ func (r *usersRepo) Update(ctx context.Context, userID uuid.UUID, login, firstNa
 	if len(changeQuery) == 0 {
 		return r.GetByID(ctx, userID)
 	}
-
+	changeQuery = append(changeQuery, "updated_at = now()")
 	subQuery := strings.Join(changeQuery, ", ")
 	changeSet["id"] = userID
 	user := &repository.User{}

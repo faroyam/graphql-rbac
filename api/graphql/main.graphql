@@ -18,6 +18,7 @@ type Query {
 type Mutation {
     signUp(input: SignUpInput!): User
     signIn(input: SignInInput!): Tokens
+    refreshTokens(refreshToken: String!): Tokens
     signOut: ID! @login
 
     updateAccount(input: UpdateAccountInput!): User @login

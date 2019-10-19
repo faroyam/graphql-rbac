@@ -39,14 +39,14 @@ func (r *actionsRepo) Create(ctx context.Context, title, description string) (*r
 }
 
 func (r *actionsRepo) Update(ctx context.Context, title string, description *string) (*repository.Action, error) {
-	changeSet := make(map[string]interface{}, 1)
-	changeQuery := make([]string, 0, 1)
+	changeSet := make(map[string]interface{}, 2)
+	changeQuery := make([]string, 0, 2)
 
 	if description != nil {
 		changeQuery = append(changeQuery, "description = :description")
 		changeSet["description"] = *description
 	}
-
+	changeQuery = append(changeQuery, "updated_at = now()")
 	subQuery := strings.Join(changeQuery, ", ")
 	changeSet["title"] = title
 	user := &repository.Action{}

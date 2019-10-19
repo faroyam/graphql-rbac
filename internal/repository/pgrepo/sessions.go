@@ -19,8 +19,6 @@ type sessionsRepo struct {
 	db postgresql.Connection
 }
 
-//todo implement functions
-
 func (r *sessionsRepo) Create(ctx context.Context, userID uuid.UUID, accessToken, refreshToken string,
 	accessTokenTTL, refreshTokenTTL int) (*repository.Session, error) {
 	session := &repository.Session{
@@ -45,11 +43,49 @@ func (r *sessionsRepo) Create(ctx context.Context, userID uuid.UUID, accessToken
 
 func (r *sessionsRepo) Update(ctx context.Context, oldRefreshToken, accessToken, refreshToken string,
 	accessTokenTTL, refreshTokenTTL int) (*repository.Session, error) {
-	panic("implement me")
+
+	session := &repository.Session{}
+
+	err := r.db.ExecuteInTransaction(ctx, func(tx *sqlx.Tx) error {
+		query, args, err := tx.BindNamed(
+			`UPDATE sessions
+					SET 
+						access_token = :access_token, 
+						access_token_ttl = :access_token_ttl,
+						refresh_token = :refresh_token,
+						refresh_token_ttl = :refresh_token_ttl,
+						updated_at = now()
+					WHERE refresh_token = :old_refresh_token
+					RETURNING *;`,
+			map[string]interface{}{
+				"access_token":      accessToken,
+				"access_token_ttl":  accessTokenTTL,
+				"refresh_token":     refreshToken,
+				"refresh_token_ttl": refreshTokenTTL,
+				"old_refresh_token": oldRefreshToken,
+			})
+		if err != nil {
+			return err
+		}
+		return tx.GetContext(ctx, session, query, args...)
+	})
+	return session, err
 }
 
 func (r *sessionsRepo) DeleteByID(ctx context.Context, sessionID uuid.UUID) error {
-	panic("implement me")
+	err := r.db.ExecuteInTransaction(ctx, func(tx *sqlx.Tx) error {
+		query, args, err := tx.BindNamed(
+			`DELETE FROM sessions 
+					WHERE id = :id;`,
+			map[string]interface{}{
+				"id": sessionID})
+		if err != nil {
+			return err
+		}
+		_, err = tx.ExecContext(ctx, query, args...)
+		return err
+	})
+	return err
 }
 
 func (r *sessionsRepo) DeleteByUserID(ctx context.Context, userID uuid.UUID) error {
@@ -69,7 +105,20 @@ func (r *sessionsRepo) DeleteByUserID(ctx context.Context, userID uuid.UUID) err
 }
 
 func (r *sessionsRepo) GetByUserID(ctx context.Context, userID uuid.UUID) ([]*repository.Session, error) {
-	panic("implement me")
+	sessions := make([]*repository.Session, 0)
+	err := r.db.ExecuteInTransaction(ctx, func(tx *sqlx.Tx) error {
+		query, args, err := tx.BindNamed(
+			`SELECT * FROM sessions 
+					WHERE user_id = :user_id;`,
+			map[string]interface{}{
+				"user_id": userID,
+			})
+		if err != nil {
+			return err
+		}
+		return tx.SelectContext(ctx, sessions, query, args...)
+	})
+	return sessions, err
 }
 
 func (r *sessionsRepo) GetByToken(ctx context.Context, token string) (*repository.Session, error) {
